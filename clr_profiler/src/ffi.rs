@@ -52,6 +52,7 @@ pub struct GUID {
     pub data3: c_ushort,
     pub data4: [c_uchar; 8],
 }
+
 impl From<Uuid> for GUID {
     fn from(u: Uuid) -> Self {
         let (data1, data2, data3, data4) = u.as_fields();
@@ -64,6 +65,7 @@ impl From<Uuid> for GUID {
         }
     }
 }
+
 pub type IID = GUID;
 pub type REFGUID = *const GUID;
 pub type REFCLSID = *const IID;

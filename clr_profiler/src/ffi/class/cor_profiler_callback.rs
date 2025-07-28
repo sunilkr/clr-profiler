@@ -15,10 +15,9 @@ use crate::{
     ProfilerInfo,
 };
 use std::{
-    ffi::c_void,
-    ptr, slice,
-    sync::atomic::{AtomicU32, Ordering},
+    ffi::c_void, ptr, slice, sync::atomic::{AtomicU32, Ordering}
 };
+use uuid::Uuid;
 use widestring::{U16CString, U16String};
 
 #[repr(C)]
@@ -170,6 +169,14 @@ impl<T: CorProfilerCallback9> CorProfilerCallback<T> {
     }
 }
 
+fn uuid_str(guid: GUID) -> String {
+    let res = match Uuid::from_fields(guid.data1, guid.data2, guid.data3, &guid.data4){
+        Ok(uuid) => uuid.to_hyphenated().to_string(),
+        Err(err) => format!("{err}"),
+    };
+    res
+}
+
 // IUnknown
 impl<T: CorProfilerCallback9> CorProfilerCallback<T> {
     pub unsafe extern "system" fn query_interface(
@@ -179,7 +186,7 @@ impl<T: CorProfilerCallback9> CorProfilerCallback<T> {
     ) -> HRESULT {
         println!(
             "CorProfilerCallback hit query_interface! Querying riid: {:?}",
-            *riid
+            uuid_str(*riid)
         );
         if *riid == IUnknown::IID
             || *riid == ICorProfilerCallback::IID

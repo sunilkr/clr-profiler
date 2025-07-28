@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::cil::{
     il_f32, il_f64, il_i32, il_i64, il_i8, il_u16, il_u32, il_u8, opcode::*, Error, OperandParams,
 };
@@ -45,6 +47,32 @@ impl Operand {
         }
     }
 }
+
+impl Display for Operand {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let op_str = match self {
+            Self::InlineNone => format!(""),            
+            Self::ShortInlineVar(val) => format!("{val}"),
+            Self::InlineVar(val) => format!("{val}"),
+            Self::ShortInlineI(val) => format!("{val}"),
+            Self::InlineI(val) => format!("{val:#04x}"),
+            Self::InlineI8(val) => format!("{val:#08x}"),
+            Self::ShortInlineR(val) => format!("R@{val:?}"),
+            Self::InlineR(val) => format!("R@{val:?}"),
+            Self::InlineMethod(val) => format!("[{val:#04x}]"),
+            Self::InlineSig(val) => format!("sig@{val:#04x}"),
+            Self::ShortInlineBrTarget(val) => format!("BT@{val}"),
+            Self::InlineBrTarget(val) => format!("BT@{val:#04x}"),
+            Self::InlineSwitch(length, _) => format!("switch[len={length}]"),
+            Self::InlineType(val) => format!("T@{val:#04x}"),
+            Self::InlineString(val) => format!("S@{val:#04x}"),
+            Self::InlineField(val) => format!("F@{val:#04x}"),
+            Self::InlineTok(val) => format!("TOK@{val:#04x}"),
+        };
+        write!(f, "{}", op_str)
+    }
+}
+
 #[derive(Debug)]
 pub struct Instruction {
     pub opcode: Opcode,
@@ -143,6 +171,7 @@ impl Instruction {
             operand: operand,
         })
     }
+
     pub fn into_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
         if self.opcode.length == 1 {
@@ -191,6 +220,12 @@ impl Instruction {
     }
     pub fn length(&self) -> usize {
         self.opcode.length as usize + self.operand.length()
+    }
+}
+
+impl Display for Instruction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} {}", self.opcode.name, self.operand)
     }
 }
 

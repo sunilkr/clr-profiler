@@ -14,4 +14,6 @@ uuid = "0.8"
 crate-type = ["cdylib"]
 
 [features]
+default=["basic_integration_test"]
 basic_integration_test = []
+
