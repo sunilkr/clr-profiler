@@ -1,9 +1,8 @@
 use crate::{
     ffi::{
-        mdMethodDef, CorMethodAttr, CorMethodImpl, MetaDataImport as FFIMetaDataImport, HRESULT,
-        S_OK, WCHAR,
+        mdMethodDef, mdTypeDef, CorMethodAttr, CorMethodImpl, CorTypeAttr, MetaDataImport as FFIMetaDataImport, HRESULT, S_OK, WCHAR
     },
-    MetadataImportTrait, MethodProps,
+    MetadataImportTrait, MethodProps, TypeDefProps,
 };
 use std::{mem::MaybeUninit, ptr};
 use widestring::U16CString;
@@ -90,6 +89,54 @@ impl MetadataImportTrait for MetadataImport {
                 })
             }
             _ => Err(hr),
+        }
+    }
+    
+    fn get_type_def_props(&self, td: mdTypeDef) -> Result<TypeDefProps, HRESULT> {
+        let mut name_buffer_length = MaybeUninit::uninit();
+        unsafe {
+            self.import().GetTypeDefProps(
+                td, 
+                ptr::null_mut(),
+                0,
+                name_buffer_length.as_mut_ptr(),
+                ptr::null_mut(),
+                ptr::null_mut(),
+            );
+        };
+
+        let name_buffer_length = unsafe { name_buffer_length.assume_init() };
+        let mut name_buffer = Vec::<WCHAR>::with_capacity(name_buffer_length as usize);
+        unsafe { name_buffer.set_len(name_buffer_length as usize) };
+        let mut name_length = MaybeUninit::uninit();
+        let mut flags = MaybeUninit::uninit();
+        let mut parent_token = MaybeUninit::uninit();
+
+        let hr = unsafe {
+            self.import().GetTypeDefProps(td, 
+                name_buffer.as_mut_ptr(), 
+                name_buffer_length, 
+                name_length.as_mut_ptr(), 
+                flags.as_mut_ptr(), 
+            parent_token.as_mut_ptr())
+        };
+        
+        match hr {
+            S_OK => {
+                let name = U16CString::from_vec_with_nul(name_buffer)
+                    .unwrap()
+                    .to_string_lossy();
+                let flags = unsafe { flags.assume_init() };
+                let type_def_flags = CorTypeAttr::from_bits(flags).unwrap();
+                let parent_token = unsafe { parent_token.assume_init() };
+
+                Ok(TypeDefProps{
+                    name,
+                    type_def_flags,
+                    parent_token
+                })
+            },
+            _ => Err(hr)
         }
     }
 }

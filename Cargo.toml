@@ -6,3 +6,6 @@ members = [
     "test_profilers",
     "profile",
 ]
+
+[workspace.dependencies]
+log = "0.4"

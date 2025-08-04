@@ -8,7 +8,8 @@ pub use self::hresult::*;
 pub use self::interface::*;
 
 use core::ffi::c_void;
-use std::intrinsics::transmute;
+use std::fmt::Display;
+use std::mem::transmute;
 use uuid::Uuid;
 
 // numeric types
@@ -63,6 +64,14 @@ impl From<Uuid> for GUID {
             data3,
             data4: *data4,
         }
+    }
+}
+
+impl Display for GUID {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let uuid = Uuid::from_fields(self.data1, self.data2, self.data3, &self.data4)
+            .unwrap(); //This should never result in error.
+        write!(f, "{}", uuid.to_hyphenated())
     }
 }
 
@@ -658,4 +667,50 @@ bitflags! {
 
     const miMaxMethodImplVal   =   0xffff;   // Range check value
 }
+}
+
+
+bitflags! {
+    pub struct CorTypeAttr: DWORD {
+        const tdVisibilityMask        =   0x00000007;
+        const tdNotPublic             =   0x00000000;
+        const tdPublic                =   0x00000001;
+        const tdNestedPublic          =   0x00000002;
+        const tdNestedPrivate         =   0x00000003;
+        const tdNestedFamily          =   0x00000004;
+        const tdNestedAssembly        =   0x00000005;
+        const tdNestedFamANDAssem     =   0x00000006;
+        const tdNestedFamORAssem      =   0x00000007;
+
+        const tdLayoutMask            =   0x00000018;
+        const tdAutoLayout            =   0x00000000;
+        const tdSequentialLayout      =   0x00000008;
+        const tdExplicitLayout        =   0x00000010;
+
+        const tdClassSemanticsMask    =   0x00000020;
+        const tdClass                 =   0x00000000;
+        const tdInterface             =   0x00000020;
+
+        const tdAbstract              =   0x00000080;
+        const tdSealed                =   0x00000100;
+        const tdSpecialName           =   0x00000400;
+
+        const tdImport                =   0x00001000;
+        const tdSerializable          =   0x00002000;
+        const tdWindowsRuntime        =   0x00004000;
+
+        const tdStringFormatMask      =   0x00030000;
+        const tdAnsiClass             =   0x00000000;
+        const tdUnicodeClass          =   0x00010000;
+        const tdAutoClass             =   0x00020000;
+        const tdCustomFormatClass     =   0x00030000;
+        const tdCustomFormatMask      =   0x00C00000;
+
+        const tdBeforeFieldInit       =   0x00100000;
+        const tdForwarder             =   0x00200000;
+
+        const tdReservedMask          =   0x00040800;
+        const tdRTSpecialName         =   0x00000800;
+        const tdHasSecurity           =   0x00040000;
+    }
 }

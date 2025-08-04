@@ -17,7 +17,7 @@ use crate::{
 use std::{
     ffi::c_void, ptr, slice, sync::atomic::{AtomicU32, Ordering}
 };
-use uuid::Uuid;
+use log::{debug, info};
 use widestring::{U16CString, U16String};
 
 #[repr(C)]
@@ -169,13 +169,13 @@ impl<T: CorProfilerCallback9> CorProfilerCallback<T> {
     }
 }
 
-fn uuid_str(guid: GUID) -> String {
-    let res = match Uuid::from_fields(guid.data1, guid.data2, guid.data3, &guid.data4){
-        Ok(uuid) => uuid.to_hyphenated().to_string(),
-        Err(err) => format!("{err}"),
-    };
-    res
-}
+// fn uuid_str(guid: GUID) -> String {
+//     let res = match Uuid::from_fields(guid.data1, guid.data2, guid.data3, &guid.data4){
+//         Ok(uuid) => uuid.to_hyphenated().to_string(),
+//         Err(err) => format!("{err}"),
+//     };
+//     res
+// }
 
 // IUnknown
 impl<T: CorProfilerCallback9> CorProfilerCallback<T> {
@@ -184,10 +184,8 @@ impl<T: CorProfilerCallback9> CorProfilerCallback<T> {
         riid: REFIID,
         ppvObject: *mut *mut c_void,
     ) -> HRESULT {
-        println!(
-            "CorProfilerCallback hit query_interface! Querying riid: {:?}",
-            uuid_str(*riid)
-        );
+        info!("CorProfilerCallback hit query_interface! Querying riid: {}", *riid);
+
         if *riid == IUnknown::IID
             || *riid == ICorProfilerCallback::IID
             || *riid == ICorProfilerCallback2::IID
@@ -209,7 +207,7 @@ impl<T: CorProfilerCallback9> CorProfilerCallback<T> {
     }
 
     pub unsafe extern "system" fn add_ref(&mut self) -> ULONG {
-        println!(
+        debug!(
             "CorProfilerCallback hit add_ref! Ref count is: {}",
             self.ref_count.load(Ordering::Relaxed)
         );
@@ -219,7 +217,7 @@ impl<T: CorProfilerCallback9> CorProfilerCallback<T> {
     }
 
     pub unsafe extern "system" fn release(&mut self) -> ULONG {
-        println!(
+        debug!(
             "CorProfilerCallback hit release! Ref count is: {}",
             self.ref_count.load(Ordering::Relaxed)
         );

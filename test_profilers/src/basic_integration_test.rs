@@ -5,6 +5,7 @@ use clr_profiler::{
     CorProfilerCallback4, CorProfilerCallback5, CorProfilerCallback6, CorProfilerCallback7,
     CorProfilerCallback8, CorProfilerCallback9, CorProfilerInfo, MetadataImportTrait, ProfilerInfo,
 };
+use log::{debug, error, info, trace, warn};
 use std::slice;
 use uuid::Uuid;
 
@@ -40,7 +41,7 @@ impl ClrProfiler for Profiler {
 
 impl CorProfilerCallback for Profiler {
     fn initialize(&mut self, profiler_info: ProfilerInfo) -> Result<(), HRESULT> {
-        println!("[PROF] Profiler initialized");
+        info!("profiler initialized");
         
         // Initialize ICorProfilerInfo reference    
         self.profiler_info = Some(profiler_info);
@@ -48,6 +49,11 @@ impl CorProfilerCallback for Profiler {
         // Set the event mask
         self.profiler_info()
             .set_event_mask(COR_PRF_MONITOR::COR_PRF_ALL)?; // COR_PRF_MONITOR_JIT_COMPILATION
+
+        match self.profiler_info().get_event_mask() {
+            Ok(mask) => debug!("current event mask: {mask:?}"),
+            Err(hresult) => warn!("failed to get current event mask, HRESULT = {hresult:#x}"),
+        } 
 
         Ok(())
     }
@@ -58,10 +64,14 @@ impl CorProfilerCallback for Profiler {
             .profiler_info()
             .get_module_metadata(function_info.module_id, CorOpenFlags::ofRead)?;
         let method_props = module_metadata.get_method_props(function_info.token)?;
+        let class_props = module_metadata.get_type_def_props(method_props.class_token)?;
         //println!("[PROF] started JIT compilation for {}", method_props.name);
         
         if method_props.name.contains("CheckCert") {
-            println!("[PROF] inspecting {}", method_props.name);
+            info!("inspecting {}.{}()", class_props.name, method_props.name, );
+            
+            debug!("class props: {class_props:#?}");
+            debug!("method props: {method_props:#?}");
 
             let il_body = self
                 .profiler_info()
@@ -73,9 +83,12 @@ impl CorProfilerCallback for Profiler {
             
             let method =
                 Method::new(il_body.method_header, il_body.method_size).or(Err(E_FAIL))?;
-            println!("Header: {:#?}", method.method_header);
-            println!("Body:");
-            method.instructions.iter().for_each(|inst| println!("  {inst}"));
+            info!("header: {:#?}", method.method_header);
+            let body = method.instructions.iter()
+                .map(|inst| format!("{inst}"))
+                .collect::<Vec<String>>()
+                .join("\n    ");
+            info!("body: \n{{\n    {body}\n}}");
             //let il = vec![nop()];
         }
         
@@ -96,33 +109,51 @@ impl CorProfilerCallback7 for Profiler {}
 impl CorProfilerCallback8 for Profiler {}
 impl CorProfilerCallback9 for Profiler {}
 
-register!(Profiler);
+//register!(Profiler);
 
-// #[no_mangle]
-// unsafe extern "system" fn DllGetClassObject(
-//     rclsid: REFCLSID,
-//     riid: REFIID,
-//     ppv: *mut LPVOID,
-//     ) -> HRESULT {
+#[no_mangle]
+unsafe extern "system" fn DllGetClassObject(
+    rclsid: REFCLSID,
+    riid: REFIID,
+    ppv: *mut LPVOID,
+    ) -> HRESULT {
     
-//     println!("[PROF] DllGetClassObject called");
+    init_logging();
 
-//     let guid = *rclsid;
-//     let profiler = match Uuid::from_fields(guid.data1, guid.data2, guid.data3, &guid.data4) {
-//         Ok(uuid) => {
-//             println!("creating profiler with UUID: {{{}}}", uuid.to_hyphenated());
-//             Profiler::with_clsid(uuid)
-//         },
-//         Err(err) => {
-//             println!("failed to covert {guid:?} to UUID; err: {err}");
-//             println!("creating profiler with default GUID {{{PROFILER_UUID}}}");
-//             Profiler::new()
-//         }
-//     };
-
-//     //let profiler = Profiler::new(rclsid);
-//     //let clsid = GUID::from(*profiler.clsid());
+    trace!("DllGetClassObject called");
+    debug!("*rclsid = {}, *riid = {}", *rclsid, *riid);
     
-//     let class_factory: &mut ClassFactory<Profiler> = ClassFactory::new(profiler);
-//     class_factory.QueryInterface(riid, ppv)
-// }
+    let guid = *rclsid;
+    let profiler = match Uuid::from_fields(guid.data1, guid.data2, guid.data3, &guid.data4) {
+        Ok(uuid) => {
+            info!("creating profiler with UUID: {{{}}}", uuid.to_hyphenated());
+            Profiler::with_clsid(uuid)
+        },
+        Err(err) => {
+            error!("failed to covert {guid:?} to UUID; err: {err}");
+            warn!("creating profiler with default GUID {{{PROFILER_UUID}}}");
+            Profiler::new()
+        }
+    };
+
+    //let profiler = Profiler::new(rclsid);
+    //let clsid = GUID::from(*profiler.clsid());
+    
+    let class_factory: &mut ClassFactory<Profiler> = ClassFactory::new(profiler);
+    class_factory.QueryInterface(riid, ppv)
+}
+
+
+fn init_logging() {
+    match simple_logger::SimpleLogger::new()
+    .with_colors(true)
+    .without_timestamps()
+    .init() {
+        Ok(_) => {
+            info!("logging initialized");
+        }
+        Err(err) => {
+            eprintln!("failed to initialize logging; err: {err}");
+        }
+    }
+}
