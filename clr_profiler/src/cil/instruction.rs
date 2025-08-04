@@ -52,22 +52,21 @@ impl Display for Operand {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let op_str = match self {
             Self::InlineNone => format!(""),            
-            Self::ShortInlineVar(val) => format!("{val}"),
+            Self::ShortInlineVar(val)|Self::ShortInlineI(val) => format!("{val}"),
             Self::InlineVar(val) => format!("{val}"),
-            Self::ShortInlineI(val) => format!("{val}"),
             Self::InlineI(val) => format!("{val:#04x}"),
             Self::InlineI8(val) => format!("{val:#08x}"),
-            Self::ShortInlineR(val) => format!("R@{val:?}"),
-            Self::InlineR(val) => format!("R@{val:?}"),
-            Self::InlineMethod(val) => format!("[{val:#04x}]"),
-            Self::InlineSig(val) => format!("sig@{val:#04x}"),
-            Self::ShortInlineBrTarget(val) => format!("BT@{val}"),
-            Self::InlineBrTarget(val) => format!("BT@{val:#04x}"),
-            Self::InlineSwitch(length, _) => format!("switch[len={length}]"),
-            Self::InlineType(val) => format!("T@{val:#04x}"),
-            Self::InlineString(val) => format!("S@{val:#04x}"),
-            Self::InlineField(val) => format!("F@{val:#04x}"),
-            Self::InlineTok(val) => format!("TOK@{val:#04x}"),
+            Self::ShortInlineR(val) => format!("{val:?}"),
+            Self::InlineR(val) => format!("{val:?}"),
+            Self::InlineType(val) 
+            | Self::InlineMethod(val) 
+            | Self::InlineField(val)
+            | Self::InlineString(val)
+            | Self::InlineTok(val)
+            | Self::InlineSig(val) => format!("{val:#04x}"),
+            Self::ShortInlineBrTarget(val) => format!("{val}"),
+            Self::InlineBrTarget(val) => format!("{val:#04x}"),
+            Self::InlineSwitch(length, _) => format!("switch[len={length}]"),             
         };
         write!(f, "{}", op_str)
     }

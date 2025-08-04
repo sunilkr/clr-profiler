@@ -1,12 +1,10 @@
 use clr_profiler::{
-    cil::{nop, Method},
-    ffi::{ClassFactory, CorOpenFlags, FunctionID, COR_PRF_MONITOR, E_FAIL, GUID, HRESULT, LPVOID, REFCLSID, REFIID},
-    register, ClrProfiler, CorProfilerCallback, CorProfilerCallback2, CorProfilerCallback3,
+    cil::{ldc_i4_1, ret, Method},
+    ffi::{ClassFactory, CorOpenFlags, FunctionID, COR_PRF_MONITOR, E_FAIL, HRESULT, LPVOID, REFCLSID, REFIID}, ClrProfiler, CorProfilerCallback, CorProfilerCallback2, CorProfilerCallback3,
     CorProfilerCallback4, CorProfilerCallback5, CorProfilerCallback6, CorProfilerCallback7,
     CorProfilerCallback8, CorProfilerCallback9, CorProfilerInfo, MetadataImportTrait, ProfilerInfo,
 };
 use log::{debug, error, info, trace, warn};
-use std::slice;
 use uuid::Uuid;
 
 const PROFILER_UUID: &str = "DF63A541-5A33-4611-8829-F4E495985EE3";
@@ -64,14 +62,15 @@ impl CorProfilerCallback for Profiler {
             .profiler_info()
             .get_module_metadata(function_info.module_id, CorOpenFlags::ofRead)?;
         let method_props = module_metadata.get_method_props(function_info.token)?;
-        let class_props = module_metadata.get_type_def_props(method_props.class_token)?;
         //println!("[PROF] started JIT compilation for {}", method_props.name);
         
         if method_props.name.contains("CheckCert") {
-            info!("inspecting {}.{}()", class_props.name, method_props.name, );
+            let class_props = module_metadata.get_type_def_props(method_props.class_token)?;
+            let qualified_method_name = format!("{}.{}", class_props.name, method_props.name);
+            info!("--- inspecting {qualified_method_name}() ---");
             
-            debug!("class props: {class_props:#?}");
-            debug!("method props: {method_props:#?}");
+            debug!("{class_props:#?}");
+            debug!("{method_props:#?}");
 
             let il_body = self
                 .profiler_info()
@@ -81,15 +80,27 @@ impl CorProfilerCallback for Profiler {
             //     slice::from_raw_parts(il_body.method_header, il_body.method_size as usize)
             // };
             
-            let method =
-                Method::new(il_body.method_header, il_body.method_size).or(Err(E_FAIL))?;
-            info!("header: {:#?}", method.method_header);
+            let mut method = Method::new(il_body.method_header, il_body.method_size).or(Err(E_FAIL))?;
+            info!("{:#?}", method.method_header);
             let body = method.instructions.iter()
                 .map(|inst| format!("{inst}"))
                 .collect::<Vec<String>>()
                 .join("\n    ");
             info!("body: \n{{\n    {body}\n}}");
-            //let il = vec![nop()];
+            
+            if method.sections.len() > 0 {
+                info!("sections: {:#?}", method.sections);
+            }
+
+            if qualified_method_name.to_lowercase().starts_with("tls1client") {
+                info!("attemtpting to replace IL of {qualified_method_name}");
+                method.instructions = vec![ldc_i4_1(), ret()];                
+                let method_bytes = method.into_bytes();
+                //let method_malloc = self.profiler_info().get_il_function_body_allocator(function_info.module_id)?;
+                //let new_method = unsafe { method_malloc.Alloc(method_bytes.len() as ULONG) };
+                self.profiler_info().set_il_function_body(function_info.module_id, function_info.token, method_bytes.as_ptr())?;
+                info!("function body replaced");
+            }
         }
         
         // 1. Modify method header
