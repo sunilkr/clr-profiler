@@ -1,5 +1,5 @@
 use clr_profiler::{
-    cil::{ldc_i4_1, ret, Method},
+    cil::{ldc_i4_1, ret, Method, MethodHeader, TinyMethodHeader},
     ffi::{ClassFactory, CorOpenFlags, FunctionID, COR_PRF_MONITOR, E_FAIL, HRESULT, LPVOID, REFCLSID, REFIID}, ClrProfiler, CorProfilerCallback, CorProfilerCallback2, CorProfilerCallback3,
     CorProfilerCallback4, CorProfilerCallback5, CorProfilerCallback6, CorProfilerCallback7,
     CorProfilerCallback8, CorProfilerCallback9, CorProfilerInfo, MetadataImportTrait, ProfilerInfo,
@@ -64,10 +64,10 @@ impl CorProfilerCallback for Profiler {
         let method_props = module_metadata.get_method_props(function_info.token)?;
         //println!("[PROF] started JIT compilation for {}", method_props.name);
         
-        if method_props.name.contains("CheckCert") {
+        if method_props.name == "userCertValidationCallbackWrapper" {
             let class_props = module_metadata.get_type_def_props(method_props.class_token)?;
             let qualified_method_name = format!("{}.{}", class_props.name, method_props.name);
-            info!("--- inspecting {qualified_method_name}() ---");
+            info!("inspecting {qualified_method_name}()");
             
             debug!("{class_props:#?}");
             debug!("{method_props:#?}");
@@ -92,15 +92,27 @@ impl CorProfilerCallback for Profiler {
                 info!("sections: {:#?}", method.sections);
             }
 
-            if qualified_method_name.to_lowercase().starts_with("tls1client") {
-                info!("attemtpting to replace IL of {qualified_method_name}");
-                method.instructions = vec![ldc_i4_1(), ret()];                
-                let method_bytes = method.into_bytes();
-                //let method_malloc = self.profiler_info().get_il_function_body_allocator(function_info.module_id)?;
-                //let new_method = unsafe { method_malloc.Alloc(method_bytes.len() as ULONG) };
-                self.profiler_info().set_il_function_body(function_info.module_id, function_info.token, method_bytes.as_ptr())?;
-                info!("function body replaced");
-            }
+            // if qualified_method_name.to_lowercase().starts_with("tls1client") {
+            //     info!("attemtpting to replace IL of {qualified_method_name}");
+            //     method.instructions = vec![ldc_i4_1(), ret()];                
+            //     let method_bytes = method.into_bytes();
+            //     //TODO: figure out how to use ILFunctionBodyAllocator
+            //     self.profiler_info().set_il_function_body(function_info.module_id, function_info.token, method_bytes.as_ptr())?;
+            //     info!("function body replaced");
+            // }
+
+            info!("attemtpting to replace body of {qualified_method_name}()");
+            let new_method = Method{
+                method_header: MethodHeader::Tiny(TinyMethodHeader{code_size: 2}),
+                instructions: vec![ldc_i4_1(), ret()],
+                sections: vec![]
+            };
+
+            let method_bytes = new_method.into_bytes();
+            //TODO: figure out how to use ILFunctionBodyAllocator
+            self.profiler_info().set_il_function_body(function_info.module_id, function_info.token, method_bytes.as_ptr())?;
+            info!("function body replaced");
+            
         }
         
         // 1. Modify method header
@@ -158,6 +170,7 @@ unsafe extern "system" fn DllGetClassObject(
 fn init_logging() {
     match simple_logger::SimpleLogger::new()
     .with_colors(true)
+    .with_level(log::LevelFilter::Info)
     .without_timestamps()
     .init() {
         Ok(_) => {
