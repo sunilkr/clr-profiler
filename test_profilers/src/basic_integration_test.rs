@@ -80,28 +80,21 @@ impl CorProfilerCallback for Profiler {
             //     slice::from_raw_parts(il_body.method_header, il_body.method_size as usize)
             // };
             
-            let mut method = Method::new(il_body.method_header, il_body.method_size).or(Err(E_FAIL))?;
+            let method = Method::new(il_body.method_header, il_body.method_size).or(Err(E_FAIL))?;
             info!("{:#?}", method.method_header);
             let body = method.instructions.iter()
                 .map(|inst| format!("{inst}"))
                 .collect::<Vec<String>>()
                 .join("\n    ");
-            info!("body: \n{{\n    {body}\n}}");
+            debug!("body: \n{{\n    {body}\n}}");
             
             if method.sections.len() > 0 {
                 info!("sections: {:#?}", method.sections);
             }
 
-            // if qualified_method_name.to_lowercase().starts_with("tls1client") {
-            //     info!("attemtpting to replace IL of {qualified_method_name}");
-            //     method.instructions = vec![ldc_i4_1(), ret()];                
-            //     let method_bytes = method.into_bytes();
-            //     //TODO: figure out how to use ILFunctionBodyAllocator
-            //     self.profiler_info().set_il_function_body(function_info.module_id, function_info.token, method_bytes.as_ptr())?;
-            //     info!("function body replaced");
-            // }
-
             info!("attemtpting to replace body of {qualified_method_name}()");
+            
+            // TODO: Figure out a way to create Methods from Instructions.
             let new_method = Method{
                 method_header: MethodHeader::Tiny(TinyMethodHeader{code_size: 2}),
                 instructions: vec![ldc_i4_1(), ret()],
@@ -109,12 +102,13 @@ impl CorProfilerCallback for Profiler {
             };
 
             let method_bytes = new_method.into_bytes();
-            //TODO: figure out how to use ILFunctionBodyAllocator
+            // TODO: figure out how to use ILFunctionBodyAllocator
             self.profiler_info().set_il_function_body(function_info.module_id, function_info.token, method_bytes.as_ptr())?;
             info!("function body replaced");
             
         }
         
+        module_metadata.release();
         // 1. Modify method header
         // 2. Add a prologue
         // 3. Add an epilogue
@@ -141,6 +135,8 @@ unsafe extern "system" fn DllGetClassObject(
     ppv: *mut LPVOID,
     ) -> HRESULT {
     
+    println!("[PROF_DEBUG] In DllGetClassObject");
+
     init_logging();
 
     trace!("DllGetClassObject called");
