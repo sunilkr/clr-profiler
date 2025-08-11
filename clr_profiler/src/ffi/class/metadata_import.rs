@@ -24,9 +24,15 @@ impl MetaDataImport {
     pub unsafe fn i_metadata_import(&self) -> &IMetaDataImport<Self> {
         &(*self.lpVtbl).IMetaDataImport
     }
+
     pub unsafe fn i_metadata_import_2(&self) -> &IMetaDataImport2<Self> {
         &(*self.lpVtbl).IMetaDataImport2
     }
+
+    pub unsafe fn i_unknown(&self) -> &IUnknown<Self> {
+        &(*self.lpVtbl).IUnknown
+    }
+
     pub unsafe fn CloseEnum(&self, hEnum: HCORENUM) -> () {
         (self.i_metadata_import().CloseEnum)(self, hEnum)
     }
@@ -892,5 +898,9 @@ impl MetaDataImport {
             cMax,
             pcMethodSpecs,
         )
+    }
+
+    pub unsafe fn Release(&mut self) {
+        (self.i_unknown().Release)(self);
     }
 }
