@@ -18,8 +18,16 @@ impl MetadataImport {
             import: metadata_import,
         }
     }
+
     fn import(&self) -> &FFIMetaDataImport {
         unsafe { self.import.as_ref().unwrap() }
+    }
+
+    pub fn release(self) {
+        unsafe { 
+            let import = self.import().i_unknown();
+            (import.Release)(&mut (*self.import.cast_mut()));
+        }
     }
 }
 
