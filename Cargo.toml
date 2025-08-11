@@ -9,3 +9,4 @@ members = [
 
 [workspace.dependencies]
 log = "0.4"
+uuid = "0.8"
