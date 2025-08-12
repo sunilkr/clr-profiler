@@ -1,0 +1,13 @@
+[package]
+name = "ssl_pin_bypass"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clr_profiler = { version = "0.1.0", path = "../clr_profiler" }
+uuid = "0.8"
+log = { workspace = true }
+simple_logger = "5.0.0"
+
+[lib]
+crate-type = ["cdylib"]

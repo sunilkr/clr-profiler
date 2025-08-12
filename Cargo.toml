@@ -4,7 +4,8 @@ members = [
     "clr_profiler",
     "clr_profiler_macros",
     "test_profilers",
-    "profile",
+    "profile", 
+    "ssl_pin_bypass",
 ]
 
 [workspace.dependencies]
