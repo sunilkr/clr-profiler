@@ -1,9 +1,9 @@
 use std::{
-    env::current_exe, os::windows::process::CommandExt, path::PathBuf, process::Command
+    env::current_exe, fmt::Display, os::windows::process::CommandExt, path::PathBuf, process::Command
 };
 
 use bitflags::bitflags;
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use uuid::Uuid;
 
 bitflags! {
@@ -59,6 +59,12 @@ struct Cli {
     )]
     clsid: Uuid,
 
+    /// Log level to use
+    /// 
+    /// Sets RUST_LOG environment variable.
+    #[arg(short, long, ignore_case=true, default_value_t=Default::default())]
+    log_level: LogLevel,
+
     /// .NET program to profile
     target: PathBuf,
 
@@ -67,10 +73,24 @@ struct Cli {
     params: Vec<String>
 }
 
+#[repr(u8)]
+#[derive(Debug, Default, Clone, Copy)]
+#[derive(ValueEnum)]
+enum LogLevel {
+    Off   = 0,
+    Error = 1,
+    Warn  = 2,
+    #[default]
+    Info  = 3,
+    Debug = 4,
+    Trace = 5,
+}
 
-//const CREATE_SUSPENDED: u32 = 4;
-
-
+impl Display for LogLevel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
 
 fn get_profiler_path(profiler_path: &PathBuf) -> PathBuf {
     let exe_path = current_exe().expect("failed to get current exe");
@@ -79,17 +99,18 @@ fn get_profiler_path(profiler_path: &PathBuf) -> PathBuf {
     profiler_path.canonicalize().expect(&format!("failed to make absolute path from {}", profiler_path.display()))
 }
 
-fn launch_with_profiler(profiler_path: &PathBuf, command_line: &str, clsid: &Uuid, suspended: bool) {
+fn launch_with_profiler(profiler_path: &PathBuf, command_line: &str, opts: &Cli) {
     let mut command = Command::new(command_line);
 
-    if suspended {
+    if opts.suspended {
         println!("Luanching in suspended mode. Attach debugger to target and continue.");
         command.creation_flags(CreationFlags::SUSPENDED.into())
     } else { 
         &mut command
     }
+        .env("RUST_LOG", opts.log_level.to_string())
         .env("COR_ENABLE_PROFILING", "1")
-        .env("COR_PROFILER", format!("{{{}}}", clsid.to_hyphenated().to_string()))
+        .env("COR_PROFILER", format!("{{{}}}", opts.clsid.to_hyphenated().to_string()))
         .env("COR_PROFILER_PATH", 
             profiler_path.to_str()
                 .unwrap_or_else(|| panic!("can't convert profiler path to &str")
@@ -125,13 +146,13 @@ fn get_command_line(target: &PathBuf, args: &[String]) -> String {
 }
 
 fn main() {
-
     let args = Cli::parse();
     eprintln!("{args:#?}");
+    eprintln!("RUST_LOG={:?}", args.log_level as u8);
 
     let profiler_path = get_profiler_path(&args.profiler);
     let cmdline = get_command_line(&args.target, &args.params);
 
     println!("[*] launching '{}' with profiler {}", cmdline, profiler_path.display());
-    launch_with_profiler(&profiler_path, &cmdline, &args.clsid, args.suspended);
+    launch_with_profiler(&profiler_path, &cmdline, &args);
 }

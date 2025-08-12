@@ -2,7 +2,7 @@
 name = "profile"
 version = "0.1.0"
 description = "Launch target with profiler"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 bitflags = "2.9.1"
