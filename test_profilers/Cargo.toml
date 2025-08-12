@@ -2,7 +2,7 @@
 name = "test_profilers"
 version = "0.1.0"
 authors = ["Camden Reslink <camdenreslink@gmail.com>"]
-edition = "2018"
+edition = "2024"
 license = "MIT"
 repository = "https://github.com/camdenreslink/clr-profiler"
 
