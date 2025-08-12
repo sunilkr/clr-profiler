@@ -129,17 +129,11 @@ impl CorProfilerCallback9 for Profiler {}
 //register!(Profiler);
 
 #[unsafe(no_mangle)]
-unsafe extern "system" fn DllGetClassObject(
-    rclsid: REFCLSID,
-    riid: REFIID,
-    ppv: *mut LPVOID,
-    ) -> HRESULT {
-    
+unsafe extern "system" fn DllGetClassObject(rclsid: REFCLSID, riid: REFIID, ppv: *mut LPVOID) -> HRESULT {
     //println!("[PROF_DEBUG] In DllGetClassObject");
-
     init_logging();
-
     trace!("in DllGetClassObject");
+    
     unsafe {
         debug!("*rclsid = {}, *riid = {}", *rclsid, *riid);
     }
@@ -170,6 +164,7 @@ fn init_logging() {
     .with_colors(true)
     .with_level(log::LevelFilter::Info)
     .without_timestamps()
+    .env()
     .init() {
         Ok(_) => {
             info!("logging initialized");
