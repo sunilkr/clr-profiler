@@ -14,6 +14,7 @@ struct Profiler {
     clsid: Uuid,
     profiler_info: Option<ProfilerInfo>,
 }
+
 impl Profiler {
     fn profiler_info(&self) -> &ProfilerInfo {
         self.profiler_info.as_ref().unwrap()
@@ -23,6 +24,7 @@ impl Profiler {
         Self { clsid: clsid, profiler_info: None }
     }
 }
+
 impl ClrProfiler for Profiler {
     fn new() -> Profiler {
         Profiler {
@@ -34,6 +36,7 @@ impl ClrProfiler for Profiler {
         &self.clsid
     }
 }
+
 impl CorProfilerCallback for Profiler {
     fn initialize(&mut self, profiler_info: ProfilerInfo) -> Result<(), HRESULT> {
         // Initialize ICorProfilerInfo reference
@@ -45,17 +48,22 @@ impl CorProfilerCallback for Profiler {
 
         Ok(())
     }
-    fn jit_compilation_started(
-        &mut self,
-        function_id: FunctionID,
-        _is_safe_to_block: bool,
-    ) -> Result<(), HRESULT> {
+
+    fn jit_compilation_started(&mut self, function_id: FunctionID, _is_safe_to_block: bool) -> Result<(), HRESULT> {
+        // Get function metadata from function id.
         let function_info = self.profiler_info().get_function_info(function_id)?;
-        let module_metadata = self
-            .profiler_info()
+        
+        // Get metadata interface for module of this function.
+        // TODO: Store this instance??
+        let module_metadata = self.profiler_info()
             .get_module_metadata(function_info.module_id, CorOpenFlags::ofRead)?;
+
+        // Get method properties using module metadata interface.
         let method_props = module_metadata.get_method_props(function_info.token)?;
+        
+        // Get class (Type Definition) properties using module metadata interface.
         let class_props = module_metadata.get_type_def_props(method_props.class_token)?;
+
         let qualified_method_name = format!("{}.{}", class_props.name, method_props.name);
         info!("jit compilation started for {qualified_method_name}");
 
@@ -91,9 +99,7 @@ impl CorProfilerCallback9 for Profiler {}
 #[unsafe(no_mangle)]
 unsafe extern "system" fn DllGetClassObject( rclsid: REFCLSID, riid: REFIID, ppv: *mut LPVOID) -> HRESULT {
     println!("[PROF_DEBUG] In DllGetClassObject");
-
     init_logging();
-
     //trace!("DllGetClassObject called");
     
     unsafe {
@@ -112,20 +118,19 @@ unsafe extern "system" fn DllGetClassObject( rclsid: REFCLSID, riid: REFIID, ppv
             Profiler::new()
         }
     };
-
-    //let profiler = Profiler::new(rclsid);
-    //let clsid = GUID::from(*profiler.clsid());
     
     let class_factory: &mut ClassFactory<Profiler> = ClassFactory::new(profiler);
+
+    // Initialize [out]ppv pointer with IClassFactory instance.
     unsafe { class_factory.QueryInterface(riid, ppv) }
 }
-
 
 fn init_logging() {
     match simple_logger::SimpleLogger::new()
     .with_colors(true)
     .with_level(log::LevelFilter::Info)
     .without_timestamps()
+    .env()
     .init() {
         Ok(_) => {
             info!("logging initialized");

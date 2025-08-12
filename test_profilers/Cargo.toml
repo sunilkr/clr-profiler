@@ -14,8 +14,3 @@ simple_logger = "5.0.0"
 
 [lib]
 crate-type = ["cdylib"]
-
-[features]
-default=["basic_integration_test"]
-basic_integration_test = []
-
