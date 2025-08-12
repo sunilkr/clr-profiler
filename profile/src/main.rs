@@ -1,9 +1,9 @@
 use std::{
-    env::{args, current_exe}, ffi::OsStr, os::windows::process::CommandExt, path::PathBuf, process::Command, str::FromStr
+    env::current_exe, os::windows::process::CommandExt, path::PathBuf, process::Command
 };
 
 use bitflags::bitflags;
-use clap::{builder::Str, Parser};
+use clap::Parser;
 use uuid::Uuid;
 
 bitflags! {
