@@ -5,6 +5,7 @@ use clr_profiler::{
     CorProfilerCallback8, CorProfilerCallback9, CorProfilerInfo, MetadataImportTrait, ProfilerInfo,
 };
 use log::{debug, error, info, trace, warn};
+use log_init::init_logging;
 use uuid::Uuid;
 
 const PROFILER_UUID: &str = "DF63A541-5A33-4611-8829-F4E495985EE3";
@@ -105,7 +106,6 @@ impl CorProfilerCallback for Profiler {
             // TODO: figure out how to use ILFunctionBodyAllocator
             self.profiler_info().set_il_function_body(function_info.module_id, function_info.token, method_bytes.as_ptr())?;
             info!("function body replaced");
-            
         }
         
         module_metadata.release();
@@ -157,21 +157,3 @@ unsafe extern "system" fn DllGetClassObject(rclsid: REFCLSID, riid: REFIID, ppv:
     let class_factory: &mut ClassFactory<Profiler> = ClassFactory::new(profiler);
     unsafe { class_factory.QueryInterface(riid, ppv) }
 }
-
-
-fn init_logging() {
-    match simple_logger::SimpleLogger::new()
-    .with_colors(true)
-    .with_level(log::LevelFilter::Info)
-    .without_timestamps()
-    .env()
-    .init() {
-        Ok(_) => {
-            info!("logging initialized");
-        }
-        Err(err) => {
-            eprintln!("failed to initialize logging; err: {err}");
-        }
-    }
-}
-
