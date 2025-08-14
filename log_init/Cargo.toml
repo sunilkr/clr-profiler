@@ -1,0 +1,8 @@
+[package]
+name = "log_init"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+fern = "0.7.1"
+log.workspace = true
