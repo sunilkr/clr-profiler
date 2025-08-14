@@ -5,7 +5,8 @@ members = [
     "clr_profiler_macros",
     "test_profilers",
     "profile", 
-    "ssl_pin_bypass",
+    "ssl_pin_bypass", 
+    "load_test", "log_init",
 ]
 
 [workspace.dependencies]

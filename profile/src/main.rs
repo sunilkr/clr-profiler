@@ -148,7 +148,7 @@ fn get_command_line(target: &PathBuf, args: &[String]) -> String {
 fn main() {
     let args = Cli::parse();
     eprintln!("{args:#?}");
-    eprintln!("RUST_LOG={:?}", args.log_level as u8);
+    //eprintln!("RUST_LOG={:?}", args.log_level as u8);
 
     let profiler_path = get_profiler_path(&args.profiler);
     let cmdline = get_command_line(&args.target, &args.params);
