@@ -103,6 +103,7 @@ pub struct RuntimeInfo {
     pub version_string: String,
 }
 
+#[derive(Debug)]
 pub struct ModuleInfo2 {
     pub base_load_address: LPCBYTE,
     pub file_name: String,
