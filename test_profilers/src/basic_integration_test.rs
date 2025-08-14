@@ -1,10 +1,12 @@
 use clr_profiler::{
-    ffi::{ClassFactory, CorOpenFlags, FunctionID, COR_PRF_MONITOR, HRESULT, LPVOID, REFCLSID, REFIID},
-    ClrProfiler, CorProfilerCallback, CorProfilerCallback2, CorProfilerCallback3,
-    CorProfilerCallback4, CorProfilerCallback5, CorProfilerCallback6, CorProfilerCallback7,
-    CorProfilerCallback8, CorProfilerCallback9, CorProfilerInfo, MetadataImportTrait, ProfilerInfo,
+    ffi::{AssemblyID, ClassFactory, CorOpenFlags, FunctionID, ModuleID, COR_PRF_MONITOR, HRESULT, LPVOID, REFCLSID, REFIID}, 
+    ClrProfiler, CorProfilerCallback, CorProfilerCallback2, CorProfilerCallback3, CorProfilerCallback4, CorProfilerCallback5, 
+    CorProfilerCallback6, CorProfilerCallback7, CorProfilerCallback8, CorProfilerCallback9, 
+    CorProfilerInfo, CorProfilerInfo3,
+    MetadataImportTrait, ProfilerInfo
 };
 use log::{debug, info, warn};
+use log_init::init_logging;
 use uuid::Uuid;
 
 const PROFILER_UUID: &str = "DF63A541-5A33-4611-8829-F4E495985EE3";
@@ -46,6 +48,18 @@ impl CorProfilerCallback for Profiler {
         self.profiler_info()
             .set_event_mask(COR_PRF_MONITOR::COR_PRF_ALL)?; // COR_PRF_MONITOR_JIT_COMPILATION
 
+        Ok(())
+    }
+
+    fn assembly_load_finished(&mut self, assembly_id: AssemblyID, hr_status: HRESULT) -> Result<(), HRESULT> {
+        let assembly_info = self.profiler_info().get_assembly_info(assembly_id)?;
+        info!("assembly {} finished loading with status {:#x}", assembly_info.name, hr_status);
+        Ok(())
+    }
+
+    fn module_load_finished(&mut self, module_id: ModuleID, hr_status: HRESULT) -> Result<(), HRESULT> {
+        let module_info = self.profiler_info().get_module_info_2(module_id)?;
+        info!("moudle load finished with status {} : {:#?}", hr_status, module_info);
         Ok(())
     }
 
@@ -100,7 +114,8 @@ impl CorProfilerCallback9 for Profiler {}
 unsafe extern "system" fn DllGetClassObject( rclsid: REFCLSID, riid: REFIID, ppv: *mut LPVOID) -> HRESULT {
     println!("[PROF_DEBUG] In DllGetClassObject");
     init_logging();
-    //trace!("DllGetClassObject called");
+
+    debug!("DllGetClassObject called");
     
     unsafe {
         debug!("*rclsid = {}, *riid = {}", *rclsid, *riid);
@@ -123,20 +138,4 @@ unsafe extern "system" fn DllGetClassObject( rclsid: REFCLSID, riid: REFIID, ppv
 
     // Initialize [out]ppv pointer with IClassFactory instance.
     unsafe { class_factory.QueryInterface(riid, ppv) }
-}
-
-fn init_logging() {
-    match simple_logger::SimpleLogger::new()
-    .with_colors(true)
-    .with_level(log::LevelFilter::Info)
-    .without_timestamps()
-    .env()
-    .init() {
-        Ok(_) => {
-            info!("logging initialized");
-        }
-        Err(err) => {
-            eprintln!("failed to initialize logging; err: {err}");
-        }
-    }
 }
