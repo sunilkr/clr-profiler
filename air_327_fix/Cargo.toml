@@ -1,0 +1,13 @@
+[package]
+name = "air_327_fix"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clr_profiler = { version = "0.1.0", path = "../clr_profiler" }
+log_init = { path = "../log_init" }
+uuid = "0.8"
+log = { workspace = true }
+
+[lib]
+crate-type = ["cdylib"]

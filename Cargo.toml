@@ -6,7 +6,9 @@ members = [
     "test_profilers",
     "profile", 
     "ssl_pin_bypass", 
-    "load_test", "log_init",
+    "load_test", 
+    "log_init", 
+    "air_327_fix",
 ]
 
 [workspace.dependencies]
