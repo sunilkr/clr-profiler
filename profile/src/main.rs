@@ -1,5 +1,7 @@
 use std::{
-    env::current_exe, fmt::Display, os::windows::process::CommandExt, path::PathBuf, process::Command
+    env::current_exe, fmt::Display, fs::File, 
+    os::windows::process::CommandExt, 
+    path::PathBuf, process::Command
 };
 
 use bitflags::bitflags;
@@ -65,6 +67,20 @@ struct Cli {
     #[arg(short, long, ignore_case=true, default_value_t=Default::default())]
     log_level: LogLevel,
 
+    
+    /// File path for log messages
+    /// 
+    /// Some applications do not create/share console handles,
+    /// so log messages generated from profiler are log shown.
+    #[arg(long, default_value="clr_prof.log")]
+    log_file: String,
+
+    /// Append to log file
+    /// 
+    /// 
+    #[arg(short='A', long, default_value_t=false)]
+    log_append: bool,
+
     /// .NET program to profile
     target: PathBuf,
 
@@ -103,12 +119,13 @@ fn launch_with_profiler(profiler_path: &PathBuf, command_line: &str, opts: &Cli)
     let mut command = Command::new(command_line);
 
     if opts.suspended {
-        println!("Luanching in suspended mode. Attach debugger to target and continue.");
+        println!("launching in suspended mode");
         command.creation_flags(CreationFlags::SUSPENDED.into())
     } else { 
         &mut command
     }
         .env("RUST_LOG", opts.log_level.to_string())
+        .env("LOG_FILE", opts.log_file.clone())
         .env("COR_ENABLE_PROFILING", "1")
         .env("COR_PROFILER", format!("{{{}}}", opts.clsid.to_hyphenated().to_string()))
         .env("COR_PROFILER_PATH", 
@@ -117,10 +134,20 @@ fn launch_with_profiler(profiler_path: &PathBuf, command_line: &str, opts: &Cli)
             )
         );
 
-    match command.status() {
-        Ok(status) => {
-            println!("process existed with status {status}");
+    match command.spawn() {
+        Ok(mut child) => {
+            println!("process created with pid: {}", child.id());
+            
+            if opts.suspended {
+                println!("attach debugger to pid {} and continue.", child.id());
+            }
+
+            match child.wait() {
+                Ok(status) => println!("process existed with status {status}"),
+                Err(err) => eprintln!("could not wait for child to complete due to {err}"),
+            }
         },
+
         Err(err) => {
             println!("failed to launch '{command_line}' with profiler; err: {err}");
         }
@@ -152,6 +179,11 @@ fn main() {
 
     let profiler_path = get_profiler_path(&args.profiler);
     let cmdline = get_command_line(&args.target, &args.params);
+
+    if !args.log_append {
+        println!("truncating log file {}", &args.log_file);
+        let _ = File::create(&args.log_file);
+    }
 
     println!("[*] launching '{}' with profiler {}", cmdline, profiler_path.display());
     launch_with_profiler(&profiler_path, &cmdline, &args);

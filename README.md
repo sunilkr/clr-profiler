@@ -46,6 +46,7 @@ Some Helpful Resources:
 - https://docs.rs/intercom/0.2.0/src/intercom/combox.rs.html#105-134
 - https://learn.microsoft.com/en-us/archive/msdn-magazine/2003/september/write-msil-code-on-the-fly-with-the-net-framework-profiling-api
 - https://github.com/microsoft/clr-samples/blob/master/ProfilingAPI/ReJITEnterLeaveHooks/ILRewriter.cpp
+- https://sharplab.io/
 
 ## TODO
 
