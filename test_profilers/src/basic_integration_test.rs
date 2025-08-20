@@ -47,6 +47,12 @@ impl CorProfilerCallback for Profiler {
         // Set the event mask
         self.profiler_info()
             .set_event_mask(COR_PRF_MONITOR::COR_PRF_ALL)?; // COR_PRF_MONITOR_JIT_COMPILATION
+            // .set_event_mask(
+            //     COR_PRF_MONITOR::COR_PRF_DISABLE_ALL_NGEN_IMAGES
+            //     | COR_PRF_MONITOR::COR_PRF_MONITOR_ASSEMBLY_LOADS 
+            //     | COR_PRF_MONITOR::COR_PRF_MONITOR_MODULE_LOADS
+            //     | COR_PRF_MONITOR::COR_PRF_MONITOR_JIT_COMPILATION
+            // )?;
 
         Ok(())
     }
