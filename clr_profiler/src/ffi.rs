@@ -427,6 +427,7 @@ pub struct COR_PRF_FUNCTION {
     reJitId: ReJITID,
 }
 bitflags! {
+    #[derive(Debug)]
     pub struct COR_PRF_MONITOR: DWORD {
         const COR_PRF_MONITOR_NONE = 0;
         const COR_PRF_MONITOR_FUNCTION_UNLOADS = 0x1;
@@ -443,8 +444,8 @@ bitflags! {
         const COR_PRF_MONITOR_CODE_TRANSITIONS = 0x800;
         const COR_PRF_MONITOR_ENTERLEAVE = 0x1000;
         const COR_PRF_MONITOR_CCW = 0x2000;
-        const COR_PRF_MONITOR_REMOTING_COOKIE = 0x4000 | Self::COR_PRF_MONITOR_REMOTING.bits;
-        const COR_PRF_MONITOR_REMOTING_ASYNC = 0x8000 | Self::COR_PRF_MONITOR_REMOTING.bits;
+        const COR_PRF_MONITOR_REMOTING_COOKIE = 0x4000 | Self::COR_PRF_MONITOR_REMOTING.bits();
+        const COR_PRF_MONITOR_REMOTING_ASYNC = 0x8000 | Self::COR_PRF_MONITOR_REMOTING.bits();
         const COR_PRF_MONITOR_SUSPENDS = 0x10000;
         const COR_PRF_MONITOR_CACHE_SEARCHES = 0x20000;
         const COR_PRF_ENABLE_REJIT = 0x40000;
@@ -463,35 +464,35 @@ bitflags! {
         const COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST = 0x40000000;
         const COR_PRF_DISABLE_ALL_NGEN_IMAGES = 0x80000000;
         const COR_PRF_ALL = 0x8fffffff;
-        const COR_PRF_REQUIRE_PROFILE_IMAGE = Self::COR_PRF_USE_PROFILE_IMAGES.bits
-            | Self::COR_PRF_MONITOR_CODE_TRANSITIONS.bits
-            | Self::COR_PRF_MONITOR_ENTERLEAVE.bits;
-        const COR_PRF_ALLOWABLE_AFTER_ATTACH = Self::COR_PRF_MONITOR_THREADS.bits
-            | Self::COR_PRF_MONITOR_MODULE_LOADS.bits
-            | Self::COR_PRF_MONITOR_ASSEMBLY_LOADS.bits
-            | Self::COR_PRF_MONITOR_APPDOMAIN_LOADS.bits
-            | Self::COR_PRF_ENABLE_STACK_SNAPSHOT.bits
-            | Self::COR_PRF_MONITOR_GC.bits
-            | Self::COR_PRF_MONITOR_SUSPENDS.bits
-            | Self::COR_PRF_MONITOR_CLASS_LOADS.bits
-            | Self::COR_PRF_MONITOR_EXCEPTIONS.bits
-            | Self::COR_PRF_MONITOR_JIT_COMPILATION.bits
-            | Self::COR_PRF_ENABLE_REJIT.bits;
-        const COR_PRF_MONITOR_IMMUTABLE = Self::COR_PRF_MONITOR_CODE_TRANSITIONS.bits
-            | Self::COR_PRF_MONITOR_REMOTING.bits
-            | Self::COR_PRF_MONITOR_REMOTING_COOKIE.bits
-            | Self::COR_PRF_MONITOR_REMOTING_ASYNC.bits
-            | Self::COR_PRF_ENABLE_INPROC_DEBUGGING.bits
-            | Self::COR_PRF_ENABLE_JIT_MAPS.bits
-            | Self::COR_PRF_DISABLE_OPTIMIZATIONS.bits
-            | Self::COR_PRF_DISABLE_INLINING.bits
-            | Self::COR_PRF_ENABLE_OBJECT_ALLOCATED.bits
-            | Self::COR_PRF_ENABLE_FUNCTION_ARGS.bits
-            | Self::COR_PRF_ENABLE_FUNCTION_RETVAL.bits
-            | Self::COR_PRF_ENABLE_FRAME_INFO.bits
-            | Self::COR_PRF_USE_PROFILE_IMAGES.bits
-            | Self::COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST.bits
-            | Self::COR_PRF_DISABLE_ALL_NGEN_IMAGES.bits;
+        const COR_PRF_REQUIRE_PROFILE_IMAGE = Self::COR_PRF_USE_PROFILE_IMAGES.bits()
+            | Self::COR_PRF_MONITOR_CODE_TRANSITIONS.bits()
+            | Self::COR_PRF_MONITOR_ENTERLEAVE.bits();
+        const COR_PRF_ALLOWABLE_AFTER_ATTACH = Self::COR_PRF_MONITOR_THREADS.bits()
+            | Self::COR_PRF_MONITOR_MODULE_LOADS.bits()
+            | Self::COR_PRF_MONITOR_ASSEMBLY_LOADS.bits()
+            | Self::COR_PRF_MONITOR_APPDOMAIN_LOADS.bits()
+            | Self::COR_PRF_ENABLE_STACK_SNAPSHOT.bits()
+            | Self::COR_PRF_MONITOR_GC.bits()
+            | Self::COR_PRF_MONITOR_SUSPENDS.bits()
+            | Self::COR_PRF_MONITOR_CLASS_LOADS.bits()
+            | Self::COR_PRF_MONITOR_EXCEPTIONS.bits()
+            | Self::COR_PRF_MONITOR_JIT_COMPILATION.bits()
+            | Self::COR_PRF_ENABLE_REJIT.bits();
+        const COR_PRF_MONITOR_IMMUTABLE = Self::COR_PRF_MONITOR_CODE_TRANSITIONS.bits()
+            | Self::COR_PRF_MONITOR_REMOTING.bits()
+            | Self::COR_PRF_MONITOR_REMOTING_COOKIE.bits()
+            | Self::COR_PRF_MONITOR_REMOTING_ASYNC.bits()
+            | Self::COR_PRF_ENABLE_INPROC_DEBUGGING.bits()
+            | Self::COR_PRF_ENABLE_JIT_MAPS.bits()
+            | Self::COR_PRF_DISABLE_OPTIMIZATIONS.bits()
+            | Self::COR_PRF_DISABLE_INLINING.bits()
+            | Self::COR_PRF_ENABLE_OBJECT_ALLOCATED.bits()
+            | Self::COR_PRF_ENABLE_FUNCTION_ARGS.bits()
+            | Self::COR_PRF_ENABLE_FUNCTION_RETVAL.bits()
+            | Self::COR_PRF_ENABLE_FRAME_INFO.bits()
+            | Self::COR_PRF_USE_PROFILE_IMAGES.bits()
+            | Self::COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST.bits()
+            | Self::COR_PRF_DISABLE_ALL_NGEN_IMAGES.bits();
     }
 }
 
@@ -506,12 +507,12 @@ bitflags! {
         const COR_PRF_HIGH_MONITOR_GC_MOVED_OBJECTS = 0x20;
         const COR_PRF_HIGH_REQUIRE_PROFILE_IMAGE = 0;
         const COR_PRF_HIGH_MONITOR_LARGEOBJECT_ALLOCATED = 0x40;
-        const COR_PRF_HIGH_ALLOWABLE_AFTER_ATTACH = Self::COR_PRF_HIGH_IN_MEMORY_SYMBOLS_UPDATED.bits
-            | Self::COR_PRF_HIGH_MONITOR_DYNAMIC_FUNCTION_UNLOADS.bits
-            | Self::COR_PRF_HIGH_BASIC_GC.bits
-            | Self::COR_PRF_HIGH_MONITOR_GC_MOVED_OBJECTS.bits
-            | Self::COR_PRF_HIGH_MONITOR_LARGEOBJECT_ALLOCATED.bits;
-        const COR_PRF_HIGH_MONITOR_IMMUTABLE = COR_PRF_HIGH_MONITOR::COR_PRF_HIGH_DISABLE_TIERED_COMPILATION.bits;
+        const COR_PRF_HIGH_ALLOWABLE_AFTER_ATTACH = Self::COR_PRF_HIGH_IN_MEMORY_SYMBOLS_UPDATED.bits()
+            | Self::COR_PRF_HIGH_MONITOR_DYNAMIC_FUNCTION_UNLOADS.bits()
+            | Self::COR_PRF_HIGH_BASIC_GC.bits()
+            | Self::COR_PRF_HIGH_MONITOR_GC_MOVED_OBJECTS.bits()
+            | Self::COR_PRF_HIGH_MONITOR_LARGEOBJECT_ALLOCATED.bits();
+        const COR_PRF_HIGH_MONITOR_IMMUTABLE = COR_PRF_HIGH_MONITOR::COR_PRF_HIGH_DISABLE_TIERED_COMPILATION.bits();
     }
 }
 
@@ -546,7 +547,9 @@ pub enum COR_PRF_SNAPSHOT_INFO {
     COR_PRF_SNAPSHOT_REGISTER_CONTEXT = 0x1,
     COR_PRF_SNAPSHOT_X86_OPTIMIZED = 0x2,
 }
+
 bitflags! {
+    #[derive(Debug)]
     pub struct COR_PRF_MODULE_FLAGS: DWORD {
         const COR_PRF_MODULE_DISK = 0x1;
         const COR_PRF_MODULE_NGEN = 0x2;
@@ -583,6 +586,7 @@ pub struct COR_SECATTR {
     cbCustomAttribute: ULONG,        // Length of the above blob.
 }
 bitflags! {
+    #[derive(Debug)]
     pub struct CorMethodAttr: DWORD {
         // member access mask - Use this mask to retrieve accessibility information.
         const mdMemberAccessMask          =   0x0007;
@@ -624,6 +628,7 @@ bitflags! {
     }
 }
 bitflags! {
+    #[derive(Debug)]
     pub struct CorMethodImpl: DWORD
 {
     // code impl mask
@@ -655,15 +660,15 @@ bitflags! {
     // These are the flags that are allowed in MethodImplAttribute's Value
     // property. This should include everything above except the code impl
     // flags (which are used for MethodImplAttribute's MethodCodeType field).
-    const miUserMask = Self::miManagedMask.bits
-        | Self::miForwardRef.bits
-        | Self::miPreserveSig.bits
-        | Self::miInternalCall.bits
-        | Self::miSynchronized.bits
-        | Self::miNoInlining.bits
-        | Self::miAggressiveInlining.bits
-        | Self::miNoOptimization.bits
-        | Self::miAggressiveOptimization.bits;
+    const miUserMask = Self::miManagedMask.bits()
+        | Self::miForwardRef.bits()
+        | Self::miPreserveSig.bits()
+        | Self::miInternalCall.bits()
+        | Self::miSynchronized.bits()
+        | Self::miNoInlining.bits()
+        | Self::miAggressiveInlining.bits()
+        | Self::miNoOptimization.bits()
+        | Self::miAggressiveOptimization.bits();
 
     const miMaxMethodImplVal   =   0xffff;   // Range check value
 }
@@ -671,6 +676,7 @@ bitflags! {
 
 
 bitflags! {
+    #[derive(Debug)]
     pub struct CorTypeAttr: DWORD {
         const tdVisibilityMask        =   0x00000007;
         const tdNotPublic             =   0x00000000;
