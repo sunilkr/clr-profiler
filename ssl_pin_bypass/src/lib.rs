@@ -40,14 +40,18 @@ impl ClrProfiler for Profiler {
 
 impl CorProfilerCallback for Profiler {
     fn initialize(&mut self, profiler_info: ProfilerInfo) -> Result<(), HRESULT> {
-        info!("profiler initialized");
+        info!("initializing profiler");
         
         // Initialize ICorProfilerInfo reference    
         self.profiler_info = Some(profiler_info);
 
         // Set the event mask
         self.profiler_info()
-            .set_event_mask(COR_PRF_MONITOR::COR_PRF_ALL)?; // COR_PRF_MONITOR_JIT_COMPILATION
+            .set_event_mask(
+                COR_PRF_MONITOR::COR_PRF_MONITOR_JIT_COMPILATION
+                | COR_PRF_MONITOR::COR_PRF_DISABLE_ALL_NGEN_IMAGES
+            )?;
+            //.set_event_mask(COR_PRF_MONITOR::COR_PRF_ALL)?; // COR_PRF_MONITOR_JIT_COMPILATION
 
         match self.profiler_info().get_event_mask() {
             Ok(mask) => debug!("current event mask: {mask:?}"),
@@ -63,11 +67,13 @@ impl CorProfilerCallback for Profiler {
             .profiler_info()
             .get_module_metadata(function_info.module_id, CorOpenFlags::ofRead)?;
         let method_props = module_metadata.get_method_props(function_info.token)?;
-        //println!("[PROF] started JIT compilation for {}", method_props.name);
+        let class_props = module_metadata.get_type_def_props(method_props.class_token)?;
+        let qualified_method_name = format!("{}.{}", class_props.name, method_props.name);
+        trace!("started JIT compilation for {}", qualified_method_name);
         
         if method_props.name == "userCertValidationCallbackWrapper" {
-            let class_props = module_metadata.get_type_def_props(method_props.class_token)?;
-            let qualified_method_name = format!("{}.{}", class_props.name, method_props.name);
+            //let class_props = module_metadata.get_type_def_props(method_props.class_token)?;
+            //let qualified_method_name = format!("{}.{}", class_props.name, method_props.name);
             info!("inspecting {qualified_method_name}()");
             
             debug!("{class_props:#?}");
@@ -90,7 +96,7 @@ impl CorProfilerCallback for Profiler {
             debug!("body: \n{{\n    {body}\n}}");
             
             if method.sections.len() > 0 {
-                info!("sections: {:#?}", method.sections);
+                debug!("sections: {:#?}", method.sections);
             }
 
             info!("attemtpting to replace body of {qualified_method_name}()");
@@ -105,9 +111,8 @@ impl CorProfilerCallback for Profiler {
             let method_bytes = new_method.into_bytes();
             // TODO: figure out how to use ILFunctionBodyAllocator
             self.profiler_info().set_il_function_body(function_info.module_id, function_info.token, method_bytes.as_ptr())?;
-            info!("function body replaced");
+            info!("replaced body of {qualified_method_name} with size {}", method_bytes.len());
         }
-        
         module_metadata.release();
         // 1. Modify method header
         // 2. Add a prologue
