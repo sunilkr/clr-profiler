@@ -8,7 +8,7 @@ members = [
     "ssl_pin_bypass", 
     "load_test", 
     "log_init", 
-    "air_327_fix",
+    "sslfix2",
 ]
 
 [workspace.dependencies]
